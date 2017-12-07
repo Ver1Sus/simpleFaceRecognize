@@ -18,7 +18,7 @@ using namespace cv;
 
 
 Mat monokl2      = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\monokl2.png");
-Mat testFace     = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\face.jpg");
+Mat testFace     = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\face11.jpg");
 Mat mous1        = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\mous1.png");
 Mat hat1         = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\hat.png");
 
@@ -28,6 +28,9 @@ IplImage* hat1_ = new IplImage(hat1);
 
 int g_slider_pos = 0;
 CvCapture* g_capture = NULL;
+
+//---- номер выбанной маски
+char maskType;
 
 ///---------- подгоняем размер входязего изображения под заданную ширину
 IplImage* resizeImage(IplImage* src, int width){
@@ -64,7 +67,14 @@ void showElement(IplImage* Iimage, Rect RoiZone, IplImage* faceImg, Mat frameFro
 //       frameFromCam(RoiZone) *= 0.5;
 //       frameFromCam(RoiZone) += Mimage;
 
-        Mimage.copyTo(frameFromCam(cv::Rect(RoiZone.x,RoiZone.y, Mimage.cols, Mimage.rows)));
+       for (int i=0; i < Mimage.cols; i++){
+           for (int j = 0; j < Mimage.rows; j++){
+               if (Mimage.at<Vec3b>(Point(i,j)).val[0] + Mimage.at<Vec3b>(Point(i,j)).val[1] + Mimage.at<Vec3b>(Point(i,j)).val[2] >= 10 )
+                    frameFromCam.at<Vec3b>(Point(RoiZone.x+i, RoiZone.y+j))= Mimage.at<Vec3b>(Point(i,j));
+           }
+       }
+
+//        Mimage.copyTo(frameFromCam(cv::Rect(RoiZone.x,RoiZone.y, Mimage.cols, Mimage.rows)));
 //       Mimage.copyTo(frameFromCam(RoiZone));
     }
     else{
@@ -108,6 +118,24 @@ void faceDetect(Mat frameFromCam){
        }
 
 
+    //---- определяем маску по нажатой клавише
+    int save = maskType;
+    maskType = cvWaitKey(12);
+    if (maskType == -1) maskType = save;
+    printf("%d",maskType);
+    switch ( maskType )
+    {
+        case 49:
+            break;
+        case 50:
+            break;
+        case 51:
+            break;
+        default:
+            maskType = 49;
+
+    }
+
 
 
     //------------------------------------------------
@@ -129,10 +157,28 @@ void faceDetect(Mat frameFromCam){
 
 //        Rect hatZone(faceR->x + faceR->width, faceR->y - hat1_->height, faceR->width, hat1_->height);
         Rect hatZone(faceR->x + faceR->width*0.2,
-                     faceR->y - hat1_->height*0.3,
-                     hat1_->width*0.3,
-                     hat1_->height*0.3);
-        showElement(hat1_, hatZone, faceImg, frameFromCam);
+                     faceR->y - hat1_->height * faceR->width*0.001, //-- зависимость от ширины лица
+                     faceR->width*0.6,
+                     faceR->height);
+//                     hat1_->width*0.3,
+//                     hat1_->height*0.3);
+//        printf("%d %d %d %d", faceR->y , hat1_->height , faceR->width, faceR->y - hat1_->height * faceR->width*0.001);
+
+        //--- дублирующая переменная
+        Mat img2 = frameFromCam;
+
+        //--- Создаем изображение, где только лицо
+        //--- Прилшось в ROI области глаз и рта для Х и У добавить Х и У позиции лица
+        Rect faceZone(faceR->x,
+                      faceR->y,
+                      faceR->width,
+                      faceR->height);
+        Mat faceImag_mat = cvarrToMat(faceImg);
+        IplImage* faceImg_Cut = new IplImage(faceImag_mat(faceZone));
+
+        if (maskType==49){
+            showElement(hat1_, hatZone, faceImg, frameFromCam);
+        }
 
 /*
 //        printf(" %d %d %d %d\n", faceR->x, faceR->y, faceR->width, faceR->height);
@@ -158,8 +204,7 @@ void faceDetect(Mat frameFromCam){
         //------------------------------------------------
         //------------------------ find eye
         //------------------------------------------------
-        Mat img2 = frameFromCam;
-        eyeRightSeq = cvHaarDetectObjects(faceImg, clCascadeEyeRight, mStorage,
+        eyeRightSeq = cvHaarDetectObjects(faceImg_Cut, clCascadeEyeRight, mStorage,
             1.2,
             3,
             CV_HAAR_DO_CANNY_PRUNING,
@@ -174,15 +219,17 @@ void faceDetect(Mat frameFromCam){
 //            printf(" %d %d %d %d\n", r->x, r->y, r->width, r->height);
 
             //---- не показывать, если глаз находится в проавой половине лица.
-            if (((r->x - faceR->x)*1.0)/faceR->width > 0.4){
+            if ((r->x*1.0)/faceR->width > 0.35){
 //                printf("No");
                 continue;
             }
 
+//            cvRectangle(faceImg_Cut,p1,{r->width, monokl2_2->height},CV_RGB(255,0,0),1,4,0);
 
-            Rect eyeMonoklZone(r->x, r->y, r->width, monokl2_2->height);
-            showElement(monokl2_2, eyeMonoklZone, faceImg, frameFromCam);
-
+            Rect eyeMonoklZone(r->x+faceR->x, r->y+faceR->y, r->width, monokl2_2->height);
+            if(maskType==49){
+                showElement(monokl2_2, eyeMonoklZone, faceImg, frameFromCam);
+            }
             /*
             //---- выделить глаз квадратом
 //            cvRectangle(faceImg,p1,p2,CV_RGB(255,0,0),1,4,0);
@@ -215,7 +262,7 @@ void faceDetect(Mat frameFromCam){
         //------------------------------------------------
         //-- Find mouth
         //------------------------------------------------
-        mouthSeq = cvHaarDetectObjects(faceImg, clCascadeMouth, mStorage,
+        mouthSeq = cvHaarDetectObjects(faceImg_Cut, clCascadeMouth, mStorage,
             1.1,
             3,
             0,
@@ -231,12 +278,12 @@ void faceDetect(Mat frameFromCam){
             CvPoint p2 = { mouthR->x + mouthR->width, mouthR->y + mouthR->height };
 
             //---- выбираем только те, которые в области рта
-            if(mouthR->x >= faceR->x + faceR->width*0.2 && mouthR->x + mouthR->width <= faceR->x + faceR->width*0.8
-                && mouthR->y >= faceR->y + (faceR->height*0.65) && mouthR->y + mouthR->height <= faceR->y + faceR->height*0.95)
+            if(mouthR->x >= faceR->width*0.2 && mouthR->x + mouthR->width <=  faceR->width*0.8
+                && mouthR->y >= (faceR->height*0.65) && mouthR->y + mouthR->height <= faceR->height*0.95)
             {
 //                cvRectangle(faceImg,p1,p2,CV_RGB(0,255,0),1,4,0);
 
-                Rect mousZone(mouthR->x, mouthR->y - mous1_->height/2, mouthR->width, mous1_->height);
+                Rect mousZone(mouthR->x + faceR->x, mouthR->y - mous1_->height/2 + faceR->y, mouthR->width, mous1_->height);
                 showElement(mous1_, mousZone, faceImg, frameFromCam, CV_RGB(255, 255, 255));
 
 
@@ -380,11 +427,11 @@ main(int argc, char ** argv)
 
 //    camera2();
 
-    camera1();
+//    camera1();
 
 //    test();
 
-//    faceDetect(testFace);
+    faceDetect(testFace);
 
     cvWaitKey(0);
 
