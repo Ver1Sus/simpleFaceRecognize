@@ -17,17 +17,8 @@
 using namespace cv;
 
 
-Mat monokl2      = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\monokl2.png");
-Mat testFace     = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\face11.jpg");
-Mat mous1        = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\mous1.png");
-Mat hat1         = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\hat.png");
+Mat testFace     = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\face.jpg");
 
-IplImage* monokl2_2 = new IplImage(monokl2);
-IplImage* mous1_ = new IplImage(mous1);
-IplImage* hat1_ = new IplImage(hat1);
-
-int g_slider_pos = 0;
-CvCapture* g_capture = NULL;
 
 //---- номер выбанной маски
 char maskType;
@@ -131,8 +122,10 @@ void faceDetect(Mat frameFromCam){
             break;
         case 51:
             break;
+        case 52:
+            break;
         default:
-            maskType = 49;
+            maskType = 52;
 
     }
 
@@ -156,10 +149,7 @@ void faceDetect(Mat frameFromCam){
         cvRectangle(faceImg,p1,p2,CV_RGB(0,255,255),1,4,0);
 
 //        Rect hatZone(faceR->x + faceR->width, faceR->y - hat1_->height, faceR->width, hat1_->height);
-        Rect hatZone(faceR->x + faceR->width*0.2,
-                     faceR->y - hat1_->height * faceR->width*0.001, //-- зависимость от ширины лица
-                     faceR->width*0.6,
-                     faceR->height);
+
 //                     hat1_->width*0.3,
 //                     hat1_->height*0.3);
 //        printf("%d %d %d %d", faceR->y , hat1_->height , faceR->width, faceR->y - hat1_->height * faceR->width*0.001);
@@ -176,9 +166,25 @@ void faceDetect(Mat frameFromCam){
         Mat faceImag_mat = cvarrToMat(faceImg);
         IplImage* faceImg_Cut = new IplImage(faceImag_mat(faceZone));
 
+
         if (maskType==49){
-            showElement(hat1_, hatZone, faceImg, frameFromCam);
+            Mat hat = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask1_hat.png");
+            IplImage* hat_ = new IplImage(hat);
+
+            Rect hatZone(faceR->x + faceR->width*0.2, faceR->y - hat_->height * faceR->width*0.001, //-- зависимость от ширины лица
+                         faceR->width*0.6, faceR->height);
+            showElement(hat_, hatZone, faceImg, frameFromCam);
         }
+
+        if (maskType==51){
+            Mat mask = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask3_face.png");
+            IplImage* mask_2 = new IplImage(mask);
+
+            Rect MaskZone(faceR->x, faceR->y, //-- зависимость от ширины лица
+                         faceR->width*1.6, 0); //--- высота вычилсяется из ширины, пожтому не имеет значения какая тут задана высота
+            showElement(mask_2, MaskZone, faceImg, frameFromCam);
+        }
+
 
 /*
 //        printf(" %d %d %d %d\n", faceR->x, faceR->y, faceR->width, faceR->height);
@@ -226,9 +232,31 @@ void faceDetect(Mat frameFromCam){
 
 //            cvRectangle(faceImg_Cut,p1,{r->width, monokl2_2->height},CV_RGB(255,0,0),1,4,0);
 
-            Rect eyeMonoklZone(r->x+faceR->x, r->y+faceR->y, r->width, monokl2_2->height);
             if(maskType==49){
-                showElement(monokl2_2, eyeMonoklZone, faceImg, frameFromCam);
+                Mat eye = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask1_eye.png");
+                IplImage* eye_2 = new IplImage(eye);
+
+                Rect eyeMonoklZone(r->x+faceR->x, r->y+faceR->y, r->width, eye_2->height);
+                showElement(eye_2, eyeMonoklZone, faceImg, frameFromCam);
+            }
+
+            if(maskType==50){
+                Mat eye = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask2_eye.png");
+                IplImage* eye_2 = new IplImage(eye);
+
+                Rect eyeMonoklZone(r->x+faceR->x*0.98, r->y+faceR->y, eye_2->width * faceR->width*0.001, eye_2->height);
+                showElement(eye_2, eyeMonoklZone, faceImg, frameFromCam);
+
+            }
+
+            if(maskType==52){
+                Mat eye = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask4_eye.png");
+                IplImage* eye_2 = new IplImage(eye);
+
+                Rect eyeMonoklZone(faceR->x + r->x*0.5, faceR->y + r->y*1.1,
+                                   faceR->width*0.8, 0);
+                showElement(eye_2, eyeMonoklZone, faceImg, frameFromCam);
+
             }
             /*
             //---- выделить глаз квадратом
@@ -274,8 +302,8 @@ void faceDetect(Mat frameFromCam){
         {
 
             CvRect *mouthR = (CvRect*)cvGetSeqElem(mouthSeq,i);
-            CvPoint p1 = { mouthR->x, mouthR->y };
-            CvPoint p2 = { mouthR->x + mouthR->width, mouthR->y + mouthR->height };
+//            CvPoint p1 = { mouthR->x + faceR->x, mouthR->y + faceR->y };
+//            CvPoint p2 = { mouthR->x + mouthR->width  + faceR->x, mouthR->y + mouthR->height  + faceR->y};
 
             //---- выбираем только те, которые в области рта
             if(mouthR->x >= faceR->width*0.2 && mouthR->x + mouthR->width <=  faceR->width*0.8
@@ -283,8 +311,36 @@ void faceDetect(Mat frameFromCam){
             {
 //                cvRectangle(faceImg,p1,p2,CV_RGB(0,255,0),1,4,0);
 
-                Rect mousZone(mouthR->x + faceR->x, mouthR->y - mous1_->height/2 + faceR->y, mouthR->width, mous1_->height);
-                showElement(mous1_, mousZone, faceImg, frameFromCam, CV_RGB(255, 255, 255));
+
+                if (maskType==49){
+                    Mat mouth = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask1_mouth.png");
+                    IplImage* mouth_2 = new IplImage(mouth);
+
+                    Rect mousZone(mouthR->x + faceR->x, mouthR->y + faceR->y  - mouthR->height/4,
+                                  mouthR->width, mouth_2->height);
+                    showElement(mouth_2, mousZone, faceImg, frameFromCam, CV_RGB(255, 255, 255));
+                }
+
+                if(maskType==50){
+                    Mat mouth = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask2_mouth.png");
+                    IplImage* mouth_2 = new IplImage(mouth);
+
+                    Rect mouthZone(mouthR->x + faceR->x, mouthR->y + faceR->y  - mouthR->height/4,
+                                   mouthR->width, 0);
+                    showElement(mouth_2, mouthZone, faceImg, frameFromCam);
+
+                }
+
+
+                if(maskType==52){
+                    Mat mouth = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask4_mouth.png");
+                    IplImage* mouth_2 = new IplImage(mouth);
+
+                    Rect mouthZone(faceR->x + mouthR->x * 0.3, mouthR->y + faceR->y  - mouthR->height*0.6,
+                                   faceR->width*0.8, /*mouthR->width*2.3,*/ 0);
+                    showElement(mouth_2, mouthZone, faceImg, frameFromCam);
+
+                }
 
 
                 /*                //---- меняем размер moustache под размер ширины mouth
@@ -406,14 +462,17 @@ int camera2(){
 int test(){
     const int kNewWidth = 200;
     const int kNewHeight = 400;
-    cvShowImage("faceMonokl", monokl2_2);
+
+    Mat eye = imread("C:\\Users\\VerSus\\Documents\\QtProjects\\OPENCV\\opencv_Individual\\Mask1_eye.png");
+    IplImage* eye_2 = new IplImage(eye);
+    cvShowImage("faceMonokl", eye_2);
 
     IplImage* new_img;/*
     = cvCreateImage(cvSize(monokl2_2->width/2, monokl2_2->height/2), monokl2_2->depth, monokl2_2->nChannels);
     cvResize(monokl2_2, new_img);*/
 
 
-    new_img = resizeImage(monokl2_2, 150);
+    new_img = resizeImage(eye_2, 150);
     cvShowImage("new",new_img);
 
     cvWaitKey(0);
